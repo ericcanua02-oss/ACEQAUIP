@@ -5,10 +5,10 @@ numpy==2.3.0
 tensorflow==2.20.0
 h5py==3.13.0
 pillow==10.4.0
-pymongo==4.7.2
-python-dotenv==1.0.1
-certifi==2024.6.2
-boto3==1.34.50
+pymongo==4.15.2
+python-dotenv==1.0.0
+certifi==2023.11.17
+boto3==1.34.30
 gunicorn==21.2.0
-setuptools>=65.5.0
-wheel>=0.41.0
+setuptools>=65.5.1
+wheel>=0.41.2
