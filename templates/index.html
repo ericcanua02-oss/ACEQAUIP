@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Egg Scanner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    .hidden { display: none; }
+    .preview-box img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">🥚</div>
+      <div>
+        <h1>Egg Scanner</h1>
+        <p>Upload or capture an egg image to run candling-based inspection.</p>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="left-panel">
+        <div class="controls">
+          <button id="startCam">Open Camera</button>
+          <button id="snap">Capture</button>
+          <label for="fileInput" id="chooseFile" class="file-label">Choose File</label>
+          <input type="file" id="fileInput" accept="image/*" />
+        </div>
+
+        <div class="preview-box">
+          <h2>Preview</h2>
+          <video id="cam" class="hidden" autoplay playsinline width="300"></video>
+          <canvas id="canvas" class="hidden"></canvas>
+          <img id="previewImg" class="hidden" />
+          <div id="resultBox">No prediction yet</div>
+        </div>
+
+        <div class="result-section">
+          <button id="sendButton">Send to Server</button>
+          <span class="model-label">Model: Egg Classifier v6</span>
+        </div>
+
+        <div class="control-group">
+          <button id="retakeButton">Retake</button>
+          <button id="scanAgainButton">Scan Again</button>
+        </div>
+
+        <div class="device-controls">
+          <button id="uvcOn">UVC - ON</button>
+          <button id="uvcOff">UVC - OFF</button>
+          <button id="ledOn">LED Strip: ON</button>
+          <button id="ledOff">LED Strip: OFF</button>
+        </div>
+      </section>
+
+      <section class="right-panel">
+        <h2>Scan History</h2>
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Result</th>
+              <th>Confidence</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const previewImg = document.getElementById("previewImg");
+    const resultBox = document.getElementById("resultBox");
+    const sendButton = document.getElementById("sendButton");
+    const historyTable = document.getElementById("historyTable").querySelector("tbody");
+
+    let selectedFile = null;
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+          previewImg.src = reader.result;
+          previewImg.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    sendButton.addEventListener("click", () => {
+      if (!selectedFile) {
+        alert("Please select an image first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      fetch("/api/predict", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        resultBox.innerHTML = `
+          <strong>${data.result}</strong><br>
+          Confidence: ${data.confidence}%<br>
+          <img src="${data.image_url}" width="200" />
+        `;
+        loadHistory();
+      })
+      .catch(err => {
+        resultBox.textContent = "Error: " + err.message;
+      });
+    });
+
+    function loadHistory() {
+      fetch("/api/history")
+        .then(res => res.json())
+        .then(data => {
+          historyTable.innerHTML = "";
+          data.forEach(entry => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${new Date(entry.timestamp).toLocaleString()}</td>
+              <td>${entry.result}</td>
+              <td>${entry.confidence}%</td>
+            `;
+            historyTable.prepend(row);
+          });
+        });
+    }
+
+    window.onload = loadHistory;
+  </script>
+</body>
+</html>

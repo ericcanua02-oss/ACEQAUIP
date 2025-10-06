@@ -1,0 +1,79 @@
+[
+  {
+    "filename": "scan_20250929_023324.jpg",
+    "result": "Fresh",
+    "confidence": 80.51,
+    "probs": {
+      "Fresh": 80.51000213623047,
+      "Invalid": 8.170000076293945,
+      "Spoiled": 11.319999694824219
+    },
+    "timestamp": "2025-09-29T02:33:25.535613"
+  },
+  {
+    "filename": "scan_20250929_023236.jpg",
+    "result": "Invalid",
+    "confidence": 69.66,
+    "probs": {
+      "Fresh": 30.34000015258789,
+      "Invalid": 69.66000366210938,
+      "Spoiled": 0.0
+    },
+    "timestamp": "2025-09-29T02:32:37.984264"
+  },
+  {
+    "filename": "scan_20250929_023219.jpg",
+    "result": "Invalid",
+    "confidence": 69.66,
+    "probs": {
+      "Fresh": 30.34000015258789,
+      "Invalid": 69.66000366210938,
+      "Spoiled": 0.0
+    },
+    "timestamp": "2025-09-29T02:32:20.694048"
+  },
+  {
+    "filename": "scan_20250929_023129.jpg",
+    "result": "Invalid",
+    "confidence": 97.62,
+    "probs": {
+      "Fresh": 0.7300000190734863,
+      "Invalid": 97.62000274658203,
+      "Spoiled": 1.649999976158142
+    },
+    "timestamp": "2025-09-29T02:31:31.181905"
+  },
+  {
+    "filename": "scan_20250929_015153.jpg",
+    "result": "Invalid",
+    "confidence": 100.0,
+    "probs": {
+      "Fresh": 0.0,
+      "Invalid": 100.0,
+      "Spoiled": 0.0
+    },
+    "timestamp": "2025-09-29T01:51:54.469742"
+  },
+  {
+    "filename": "scan_20250929_014545.jpg",
+    "result": "Invalid",
+    "confidence": 100.0,
+    "probs": {
+      "Fresh": 0.0,
+      "Invalid": 100.0,
+      "Spoiled": 0.0
+    },
+    "timestamp": "2025-09-29T01:45:46.522460"
+  },
+  {
+    "filename": "scan_20250929_014520.jpg",
+    "result": "Invalid",
+    "confidence": 100.0,
+    "probs": {
+      "Fresh": 0.0,
+      "Invalid": 100.0,
+      "Spoiled": 0.0
+    },
+    "timestamp": "2025-09-29T01:45:23.006965"
+  }
+]
