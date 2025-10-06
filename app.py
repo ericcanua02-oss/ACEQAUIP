@@ -37,7 +37,7 @@ S3_BUCKET = os.getenv("S3_BUCKET")
 UPLOAD_FOLDER = "uploads"
 HISTORY_PATH = "history.json"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp"}
-TARGET_SIZE = (128, 128)
+TARGET_SIZE = (150, 150)
 CLASS_NAMES = ["Fresh", "Invalid", "Spoiled"]
 MODEL_KEY = "updated_egg_advanced_model.keras"
 
