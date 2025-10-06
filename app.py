@@ -16,6 +16,8 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import certifi
 import boto3 # pyright: ignore[reportMissingImports]
+import tempfile
+import requests
 
 # ── Load environment ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -45,8 +47,18 @@ if not os.path.isfile(HISTORY_PATH):
         json.dump([], f)
 
 # ── Load model ────────────────────────────────────────────────────────────────
-model = load_model(MODEL_PATH)
-logging.info(f"✅ Loaded model from {MODEL_PATH}")
+MODEL_URL = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/updated_egg_advanced_model.keras"
+
+try:
+    response = requests.get(MODEL_URL)
+    response.raise_for_status()
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(response.content)
+        model = load_model(tmp.name)
+    logging.info(f"✅ Loaded model from S3: {MODEL_URL}")
+except Exception as e:
+    logging.error(f"❌ Failed to load model from S3: {e}")
+    model = None
 
 # ── MongoDB connection ────────────────────────────────────────────────────────
 try:
