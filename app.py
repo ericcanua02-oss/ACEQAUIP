@@ -15,9 +15,8 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import certifi
-import boto3 # pyright: ignore[reportMissingImports]
+import boto3  # pyright: ignore[reportMissingImports]
 import tempfile
-import requests
 
 # ── Load environment ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -33,7 +32,7 @@ HISTORY_PATH = "history.json"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp"}
 TARGET_SIZE = (150, 150)
 CLASS_NAMES = ["Fresh", "Invalid", "Spoiled"]
-MODEL_PATH = "updated_egg_advanced_model.keras"
+MODEL_KEY = "updated_egg_advanced_model.keras"
 
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -46,19 +45,37 @@ if not os.path.isfile(HISTORY_PATH):
     with open(HISTORY_PATH, "w") as f:
         json.dump([], f)
 
-# ── Load model ────────────────────────────────────────────────────────────────
-MODEL_URL = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/updated_egg_advanced_model.keras"
+# ── S3 setup ──────────────────────────────────────────────────────────────────
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION
+)
 
-try:
-    response = requests.get(MODEL_URL)
-    response.raise_for_status()
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(response.content)
-        model = load_model(tmp.name)
-    logging.info(f"✅ Loaded model from S3: {MODEL_URL}")
-except Exception as e:
-    logging.error(f"❌ Failed to load model from S3: {e}")
-    model = None
+def load_model_from_s3():
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as tmp:
+            s3.download_fileobj(S3_BUCKET, MODEL_KEY, tmp)
+            tmp.flush()
+            model = load_model(tmp.name)
+            logging.info(f"✅ Loaded model from S3: {MODEL_KEY}")
+            return model
+    except Exception as e:
+        logging.error(f"❌ Failed to load model from S3: {e}")
+        return None
+
+model = load_model_from_s3()
+
+def upload_to_s3(local_path, s3_key):
+    try:
+        s3.upload_file(local_path, S3_BUCKET, s3_key)
+        url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+        logging.info(f"✅ Uploaded to S3: {url}")
+        return url
+    except Exception as e:
+        logging.error(f"❌ S3 upload failed: {e}")
+        return None
 
 # ── MongoDB connection ────────────────────────────────────────────────────────
 try:
@@ -113,25 +130,6 @@ def save_history(entry: dict):
         json.dump(data[:20], f, indent=2)
         f.truncate()
 
-# ── S3 setup ──────────────────────────────────────────────────────────────────
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
-)
-
-def upload_to_s3(local_path, s3_key):
-    try:
-        s3.upload_file(local_path, S3_BUCKET, s3_key)
-        url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
-        logging.info(f"✅ Uploaded to S3: {url}")
-        return url
-    except Exception as e:
-        logging.error(f"❌ S3 upload failed: {e}")
-        return None
-
-
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -139,6 +137,8 @@ def index():
 
 @app.route("/api/predict", methods=["POST"])
 def predict():
+    if model is None:
+        return jsonify({"error": "Model not loaded"}), 500
     if "file" not in request.files:
         return jsonify({"error": "No file field"}), 400
     f = request.files["file"]
