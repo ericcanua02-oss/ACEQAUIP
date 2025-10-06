@@ -7,16 +7,23 @@ from datetime import datetime
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import numpy as np
+import tensorflow as tf
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
-from tensorflow.keras.models import load_model  # pyright: ignore[reportMissingImports]
-from tensorflow.keras.preprocessing import image  # pyright: ignore[reportMissingImports]
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
 from flask_cors import CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import certifi
-import boto3  # pyright: ignore[reportMissingImports]
+import boto3
 import tempfile
+
+# ── TensorFlow memory control ─────────────────────────────────────────────────
+try:
+    tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('CPU')[0], True)
+except Exception as e:
+    logging.warning(f"⚠️ TensorFlow memory control failed: {e}")
 
 # ── Load environment ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -155,30 +162,35 @@ def predict():
     s3_key = f"scans/{name}"
     s3_url = upload_to_s3(local_path, s3_key)
 
-    img = image.load_img(local_path, target_size=TARGET_SIZE)
-    arr = image.img_to_array(img) / 255.0
-    preds = model.predict(np.expand_dims(arr, 0))[0]
-    idx = int(np.argmax(preds))
-    label = CLASS_NAMES[idx]
-    conf = round(float(preds[idx]) * 100, 2)
+    try:
+        img = image.load_img(local_path, target_size=TARGET_SIZE)
+        arr = image.img_to_array(img).astype("float32") / 255.0
+        preds = model.predict(np.expand_dims(arr, 0))[0]
+        idx = int(np.argmax(preds))
+        label = CLASS_NAMES[idx]
+        conf = round(float(preds[idx]) * 100, 2)
 
-    entry = {
-        "filename": name,
-        "result": label,
-        "confidence": conf,
-        "probs": {CLASS_NAMES[i]: float(round(preds[i] * 100, 2)) for i in range(len(preds))},
-        "timestamp": datetime.utcnow(),
-        "image_url": s3_url
-    }
+        entry = {
+            "filename": name,
+            "result": label,
+            "confidence": conf,
+            "probs": {CLASS_NAMES[i]: float(round(preds[i] * 100, 2)) for i in range(len(preds))},
+            "timestamp": datetime.utcnow(),
+            "image_url": s3_url
+        }
 
-    save_history(entry)
+        save_history(entry)
 
-    return jsonify({
-        "result": label,
-        "confidence": conf,
-        "probs": entry["probs"],
-        "image_url": s3_url
-    }), 200
+        return jsonify({
+            "result": label,
+            "confidence": conf,
+            "probs": entry["probs"],
+            "image_url": s3_url
+        }), 200
+
+    except Exception as e:
+        logging.error(f"❌ Prediction failed: {e}")
+        return jsonify({"error": "Prediction failed"}), 500
 
 @app.route("/api/history", methods=["GET"])
 def history():
