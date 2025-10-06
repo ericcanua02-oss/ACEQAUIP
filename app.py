@@ -43,7 +43,7 @@ HISTORY_PATH = "history.json"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp"}
 TARGET_SIZE = (150, 150)
 CLASS_NAMES = ["Fresh", "Invalid", "Spoiled"]
-MODEL_KEY = "model_V6.keras"
+MODEL_KEY = "Model_V6.keras"
 
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__, static_folder="static", template_folder="templates")
