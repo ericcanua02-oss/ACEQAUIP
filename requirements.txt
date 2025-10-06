@@ -1,7 +1,8 @@
 --only-binary=:all:
 flask==2.3.3
 flask-cors==6.0.1
-numpy==1.26.4
+numpy==1.24.4
+
 tensorflow==2.20.0
 h5py==3.11.0
 pillow==10.2.0
