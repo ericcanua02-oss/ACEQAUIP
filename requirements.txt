@@ -8,4 +8,6 @@ pymongo==4.7.2
 python-dotenv==1.0.1
 certifi==2024.6.2
 boto3==1.34.50
-gunicorn>=21.2.0  # For production WSGI server
+gunicorn==21.2.0
+setuptools>=65.5.0
+wheel>=0.41.0
