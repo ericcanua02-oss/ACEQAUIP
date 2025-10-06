@@ -37,7 +37,7 @@ S3_BUCKET = os.getenv("S3_BUCKET")
 UPLOAD_FOLDER = "uploads"
 HISTORY_PATH = "history.json"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp"}
-TARGET_SIZE = (150, 150)
+TARGET_SIZE = (128, 128)
 CLASS_NAMES = ["Fresh", "Invalid", "Spoiled"]
 MODEL_KEY = "updated_egg_advanced_model.keras"
 
@@ -65,7 +65,7 @@ def load_model_from_s3():
         with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as tmp:
             s3.download_fileobj(S3_BUCKET, MODEL_KEY, tmp)
             tmp.flush()
-            model = load_model(tmp.name)
+            model = load_model(tmp.name, compile=False)
             logging.info(f"✅ Loaded model from S3: {MODEL_KEY}")
             return model
     except Exception as e:
