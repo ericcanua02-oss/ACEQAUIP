@@ -20,10 +20,14 @@ import boto3
 import tempfile
 
 # ── TensorFlow memory control ─────────────────────────────────────────────────
+# ── TensorFlow memory control ─────────────────────────────────────────────────
 try:
-    tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('CPU')[0], True)
+    physical_devices = tf.config.list_physical_devices('GPU')
+    for device in physical_devices:
+        tf.config.experimental.set_memory_growth(device, True)
 except Exception as e:
     logging.warning(f"⚠️ TensorFlow memory control failed: {e}")
+
 
 # ── Load environment ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -165,7 +169,7 @@ def predict():
     try:
         img = image.load_img(local_path, target_size=TARGET_SIZE)
         arr = image.img_to_array(img).astype("float32") / 255.0
-        preds = model.predict(np.expand_dims(arr, 0))[0]
+        preds = model.predict(np.expand_dims(arr, 0), verbose=0)[0]
         idx = int(np.argmax(preds))
         label = CLASS_NAMES[idx]
         conf = round(float(preds[idx]) * 100, 2)
@@ -180,6 +184,7 @@ def predict():
         }
 
         save_history(entry)
+        os.remove(local_path)
 
         return jsonify({
             "result": label,
@@ -191,6 +196,7 @@ def predict():
     except Exception as e:
         logging.error(f"❌ Prediction failed: {e}")
         return jsonify({"error": "Prediction failed"}), 500
+
 
 @app.route("/api/history", methods=["GET"])
 def history():
